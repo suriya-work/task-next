@@ -1,11 +1,18 @@
 "use client";
 import BlogForm from "@/components/blogForm";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
+const MdEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+
 export default function Home() {
-  const [blogContent, setBlogContent] = useState("");
+  const [blogContent, setBlogContent] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
+
+  const handleEditorChange = (value?: string) => {
+    setBlogContent(value || "");
+  };
 
   const handleGenerateBlog = async (formData: {
     title: string;
@@ -86,9 +93,24 @@ export default function Home() {
           <h2 className="text-xl font-bold text-purple-700 mb-2">
             Generated Blog:
           </h2>
-          <p className="text-white text-justify border border-purple-700 rounded-md p-4">
-            {blogContent}
-          </p>
+
+          <MdEditor
+            value={blogContent}
+            onChange={handleEditorChange}
+            height={400}
+           
+          />
+        </div>
+      )}
+
+      {blogContent && (
+        <div className="mt-6 p-6 bg-transparent text-white border border-purple-700 rounded-md rounded shadow">
+          <div
+            className="prose"
+            dangerouslySetInnerHTML={{
+              __html: blogContent,
+            }}
+          />
         </div>
       )}
     </div>
