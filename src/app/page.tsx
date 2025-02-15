@@ -1,12 +1,11 @@
 "use client";
-
 import BlogForm from "@/components/blogForm";
 import { useState } from "react";
 
 export default function Home() {
-  const [blogContent, setBlogContent] = useState(""); 
-  const [loading, setLoading] = useState(false); 
-  const [error, setError] = useState(""); 
+  const [blogContent, setBlogContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleGenerateBlog = async (formData: {
     title: string;
@@ -17,43 +16,79 @@ export default function Home() {
     length: "short" | "medium" | "long";
   }) => {
     setLoading(true);
-    setError(""); 
-    setBlogContent(""); 
+    setError("");
+    setBlogContent("");
 
     try {
-      const response = await fetch("/api/generate-blog", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const myHeaders = new Headers();
+      myHeaders.append("Authorization", "tpsg-qsDyCL4tJlu5QOptyAG5RxOfJ4rkYQI");
+      myHeaders.append("Content-Type", "application/json");
+
+      const requestBody = JSON.stringify({
+        model: "gpt-3.5-turbo-0125",
+        messages: [
+          {
+            role: "system",
+            content: "Generate a blog based on the given parameters.",
+          },
+          {
+            role: "user",
+            content: `Title: ${formData.title}\nTopic: ${formData.topic}\nKeywords: ${formData.keywords}\nTone: ${formData.tone}\nAudience: ${formData.audience}\nLength: ${formData.length}`,
+          },
+        ],
       });
 
-      const data = await response.json();
+      const response = await fetch(
+        "https://api.metisai.ir/api/v1/wrapper/openai_chat_completion/chat/completions",
+        {
+          method: "POST",
+          headers: myHeaders,
+          body: requestBody,
+          redirect: "follow",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate blog.");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-     
-      setBlogContent(data.blog);
-    } catch (err:any) {
-      setError(err.message); 
+      const text = await response.text();
+      if (!text) {
+        throw new Error("Empty response body received");
+      }
+
+      const data = JSON.parse(text);
+
+      if (!data || !data.choices || !data.choices[0]?.message?.content) {
+        throw new Error("Unexpected API response structure");
+      }
+
+      setBlogContent(
+        data.choices[0]?.message?.content || "No output received."
+      );
+    } catch (err: any) {
+      setError(err.message);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
   return (
     <div className="container mx-auto p-6">
-      <BlogForm onSubmit={handleGenerateBlog} /> 
+      <BlogForm onSubmit={handleGenerateBlog} />
 
-      {loading && <p className="mt-4 text-blue-500">Generating blog...</p>} 
+      {loading && <p className="mt-4 text-blue-500">Generating blog...</p>}
 
-      {error && <p className="mt-4 text-red-500">{error}</p>} 
+      {error && <p className="mt-4 text-red-500">{error}</p>}
 
       {blogContent && (
-        <div className="mt-6 p-6 bg-gray-100 rounded shadow">
-          <h2 className="text-xl font-bold">Generated Blog:</h2>
-          <p>{blogContent}</p>
+        <div className="mt-6 p-6 bg-transparent rounded shadow">
+          <h2 className="text-xl font-bold text-purple-700 mb-2">
+            Generated Blog:
+          </h2>
+          <p className="text-white text-justify border border-purple-700 rounded-md p-4">
+            {blogContent}
+          </p>
         </div>
       )}
     </div>

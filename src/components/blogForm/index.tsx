@@ -30,7 +30,7 @@ const BlogForm: React.FC<BlogFormProps> = ({ onSubmit }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit(formData);  // ارسال داده‌ها به تابع onSubmit
   };
 
   const inputFields = [
